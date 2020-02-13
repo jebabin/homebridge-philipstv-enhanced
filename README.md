@@ -3,48 +3,90 @@ Homebridge module for Philips TV (with JointSpace enabled) with Power on/off, So
 
 # Description
 
-This plugin is a fork of [homebridge-philipstv-x](https://www.npmjs.com/package/homebridge-philipstv-x) with additional support for Sound control, Ambilight brightness control and input selection control.
-It has been modified to work on a 43PUS6753 TV (2018 model without Android) and may not work on older one. Code may need ajustement for Ambilight to work on other 2018 models
+This plugin is a fork of [gw-wiscon](https://github.com/gw-wiscon)'s
+[homebridge-philipstv-x](https://www.npmjs.com/package/homebridge-philipstv-x)
+with additional support for Sound control, Ambilight brightness control and
+input selection control by [jebabin](https://github.com/jebabin).
+It has been modified to work on a 43PUS6753 TV (2018 model without Android)
+and may not work on older one. Code may need ajustement for Ambilight to work
+on other 2018 models.
+
+This was further modified by [Arkku](https://github.com/arkku) to use the
+HomeKit Television service, which allows remote control from the Control Center
+widget (including volume control by pressing the physical volume up/down
+buttons). Other modifications include ChromeCast-based power-on option, and
+support for an external "etherwake" executable.
 
 # Installation
 
-1. Install homebridge using: npm install -g homebridge
-2. Install this plugin using: npm install -g homebridge-philipstv-enhanced
+1. Install homebridge using: `npm install -g homebridge`
+2. Install this plugin using: `npm install -g homebridge-philipstv-enhanced`
 3. Update your configuration file. See the sample below.
+
+If you do not wish to install from npm (e.g, because you are using a fork), you
+may also clone the git repository into some directory like
+`/usr/local/homebridge/plugins/homebridge-philipstv-enhanced` and then specify the
+plugin directory as an option (`-P /usr/local/homebridge/plugins`, typically
+using `HOMEBRIDGE_OPTS` in `/etc/default/homebridge`).
 
 # Configuration
  
-Example accessory config (needs to be added to the homebridge config.json):
+Example accessory config (needs to be added to the Homebridge `config.json`):
+
   ```
  "accessories": [
- 	{
- 		"accessory": "PhilipsTV",
- 		"name": "TV",
- 		"ip_address": "10.0.1.23",
- 		"poll_status_interval": "60",
-		"model_year": 2018,
-		"has_ssl": false,
-		"has_ambilight": true,
- 	}
+     {
+        "accessory": "PhilipsTV",
+        "name": "TV",
+        "ip_address": "10.0.1.23",
+        "poll_status_interval": "60",
+        "model_year": 2018,
+        "has_ssl": true,
+        "has_ambilight": true,
+        "has_chromecast": true,
+        "hide_input_selector": false,
+        "info_button": "Source",
+        "playpause_button": "Options",
+        "wol_url": "wol://18:8e:d5:a2:8c:66"
+     }
  ]
   ```
  
-To be able to power on the TV when the TV is in standby mode, you will need the wol_url parameters with the mac address of your TV
-Added test option for WakeOnWLAN:
+To be able to power on the TV when the TV is in standby mode, you will need the `wol_url` 
+parameter with the MAC address of your TV. You may also specify
+`etherwake_exec` with a path to the `etherwake` executable (takes the MAC
+address as argument). In some cases this seems to work using
+`/usr/sbin/ethewrake` when the built-in WoL fails, so try both before giving
+up.
 
  ```
 "accessories": [
-	{
-		"accessory": "PhilipsTV",
-		"name": "TV",
-		"ip_address": "10.0.1.23",
-		"poll_status_interval": "60",
-		"model_year" : "2018",
-		"has_ssl": false,
-		"wol_url": "wol://18:8e:d5:a2:8c:66"
-	}
+    {
+        "accessory": "PhilipsTV",
+        "name": "TV",
+        "ip_address": "10.0.1.23",
+        "poll_status_interval": "60",
+        "model_year" : "2018",
+        "has_ssl": false,
+        "wol_url": "wol://18:8e:d5:a2:8c:66",
+        "etherwake_exec": "/usr/sbin/etherwake"
+    }
 ]
  ```
+
+For TVs with a built-in ChromeCast, you may also have better success waking it
+up through that. This is supported with the option `"has_chromecast": true`, in
+which case the ChromeCast URL is accessed before trying using the typical power
+state method. You may need to enable ChromeCast power-up option in the TV settings
+menu (this will increase standby power consumption, so try first if your TV
+wakes up consistently without it).
+
+The Control Center widget info button is mapped to the options menu by default,
+but may be configured to any other remote button (e.g., `Home` or `Source`)
+with the option `"info_button": "Options"`. Likewise the play/pause button may
+be remapped, with `"playpause_button": "PlayPause"`. The somewhat flaky input
+source selector (which simply sends a sequence of buttons, hoping to change the
+input) may be disabled with `"hide_input_selector": true`.
 
 # Credentials for 2016 (and newer?) models with Android TV
 
